@@ -25,7 +25,7 @@
 - `railway logs` sin argumento muestra el build del **último deployment exitoso**; como los fallos de healthcheck no lo son, hay que pasar el ID: `railway logs --build <deployment-id>`. Sin eso se leen logs obsoletos.
 - `public/router.php` es el equivalente funcional del `.htaccess` raíz: asigna `$_GET['url']`, bloquea `app`/`config`/`database`/`storage`/`reference`/`vendor`/`tests`, ocultos, el propio router y `index.php`, y transmite `uploads/` desde el directorio hermano con soporte de `Range`.
 - El router fija `APP_PUBLIC_URL=/` porque con `-t public` el document root **es** `public/`; así el HTML pide `/assets/...` en vez de `/public/assets/...`. Si se cambia el document root hay que revisar esa línea.
-- `nginx.template.conf` se mantiene para despliegues con Nginx. En Railway el `Procfile` tiene prioridad y lo deja sin usar. Su `root` debe seguir siendo la raíz del proyecto para que `public/` y `uploads/` sean árboles físicos.
+- `nginx.template.conf` se mantiene para despliegues con Nginx. En Railway queda sin uso porque el `Dockerfile` tiene prioridad sobre la plantilla de Railpack. Su `root` debe seguir siendo la raíz del proyecto para que `public/` y `uploads/` sean árboles físicos.
 - La configuración no está hardcodeada: `config/config.php` lee de `config/env.php`, que prioriza las variables del servidor sobre el archivo `.env` y acepta `DATABASE_URL` además de `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASS`.
 - Todos los `require`/`include` usan `__DIR__`, `dirname(__DIR__)` o `APP_PATH`: son rutas de filesystem, independientes del document root. No introducir `./archivo.php` relativos.
 - `Router` solo registra rutas `GET` y `POST`: las peticiones `HEAD` devuelven 404 en todos los servidores. No es una regresión del router.
