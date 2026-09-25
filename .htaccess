@@ -1,0 +1,28 @@
+# DocumentRoot de la carpeta autónoma /revista-ddp.
+# Las URLs limpias terminan en public/index.php; public/ y uploads/ se sirven directamente.
+
+Options -Indexes
+AddDefaultCharset UTF-8
+RewriteEngine On
+RewriteBase /revista-ddp/
+
+# No exponer código, configuración, SQL, logs ni copias de trabajo.
+RewriteRule ^(?:app|config|database|storage|reference)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:README|LICENSE|AGENTS)(?:\.[^/]+)?$ - [F,L,NC]
+
+# Apache nunca debe exponer archivos de control.
+RewriteRule (?:^|/)\.htaccess$ - [F,L,NC]
+
+# These two trees are physical directories and must not be rewritten.
+RewriteRule ^public(?:/|$) - [L]
+RewriteRule ^uploads(?:/|$) - [L]
+
+# Todo lo demás entra por el front controller.
+RewriteRule ^$ public/index.php [L]
+RewriteRule (.*) public/index.php?url=$1 [QSA,L]
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

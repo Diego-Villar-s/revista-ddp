@@ -1,0 +1,98 @@
+# ============================================================
+# DDP Noticias - archivos que NO deben subirse al repositorio
+# ============================================================
+
+# --- Secretos ------------------------------------------------
+# El .env real nunca se versiona. .env.example si se versiona.
+.env
+.env.*
+!.env.example
+
+# --- Credenciales de base de datos guardadas aparte ---------
+# Si en algun momento se crea config/local.php, queda fuera.
+config/local.php
+config/local.*.php
+
+# --- Dependencias --------------------------------------------
+# Este proyecto no usa Composer ni npm, pero se ignoran por si se anaden.
+vendor/
+node_modules/
+composer.phar
+
+# --- Logs y archivos de error --------------------------------
+# OJO: "logs/" sin barra inicial ignoraria CUALQUIER carpeta llamada
+# logs en cualquier nivel, incluido storage/logs/. Se ancla a la raiz.
+*.log
+/logs/
+*.log.*
+npm-debug.log*
+yarn-error.log*
+
+# Bitacora de contactos (contiene datos personales de visitantes).
+# El directorio se conserva; su contenido no se versiona.
+storage/logs/*
+!storage/logs/.gitkeep
+
+# --- Contenido subido por el admin ---------------------------
+# Los binarios viven fuera de public/ y se sirven como archivos
+# estaticos. No deben entrar al historial de git: crecen sin limite.
+#
+# Si necesitas el contenido de semilla en el primer despliegue,
+# forceselo antes de crear el commit:
+#     git add -f uploads/
+uploads/*
+!uploads/.gitkeep
+!uploads/.htaccess
+
+# --- Sistema operativo y editores ---------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.\#*
+\#*\#
+
+# --- Servidor / despliegue -----------------------------------
+# NOTA: los archivos .htaccess SI se versionan a proposito. Son
+# necesarios para el desarrollo local con XAMPP y no contienen
+# secretos. En Railway no se usan (ver nginx.template.conf).
+
+# --- Backups y archivos temporales ---------------------------
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*.swp
+*~
+*.sql.gz
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Configuracion de base de datos generada en tiempo de ejecucion.
+config.php.bak
+/database/*.sqlite
+/database/*.db
+
+# --- Resultados de pruebas y certificados -------------------
+.phpunit.result.cache
+.php-cs-fixer.cache
+.phpunit.xml.bak
+*.pem
+*.key

@@ -1,0 +1,3 @@
+# Este archivo existe para que Git versione el directorio storage/logs/.
+# El contenido real (contactos.txt) esta en .gitignore porque contiene
+# datos personales de los visitantes.

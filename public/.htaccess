@@ -1,0 +1,36 @@
+# Front controller de /revista-ddp/public/.
+# También funciona cuando Apache usa public/ como DocumentRoot directo.
+
+Options -Indexes
+AddDefaultCharset UTF-8
+RewriteEngine On
+RewriteBase /revista-ddp/public/
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php?url=$1 [QSA,L]
+
+# No servir archivos de control o configuración desde public/.
+RewriteRule ^\.htaccess$ - [F,L,NC]
+RewriteRule \.(?:sql|md|log|bak|ini|env|dist)$ - [F,L,NC]
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json application/xml
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType audio/mpeg "access plus 1 month"
+    ExpiresByType video/mp4 "access plus 1 month"
+</IfModule>

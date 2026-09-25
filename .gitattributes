@@ -1,0 +1,22 @@
+# Normaliza finales de linea a LF: Railway corre sobre Linux y un CRLF
+# en un .php o .conf puede producir errores raros de sintaxis o cabeceras.
+* text=auto eol=lf
+
+# Archivos que deben permanecer binarios (sin conversion de linea).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp3 binary
+*.mp4 binary
+
+# Los .bat y .cmd necesitan CRLF para funcionar en Windows.
+*.bat text eol=crlf
+*.cmd text eol=crlf

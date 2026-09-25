@@ -1,0 +1,125 @@
+/* ============================================================
+   DDP Panel - Ajustes propios sobre Tabler
+   ============================================================ */
+
+/* Contador de caracteres con semáforo */
+.char-counter {
+    font-size: .8rem;
+    font-weight: 600;
+}
+.char-counter.ok   { color: #2fb344; }   /* verde: dentro de rango */
+.char-counter.warn { color: #f59f00; }   /* ámbar: cerca del límite */
+.char-counter.bad  { color: #d63939; }   /* rojo: excede el límite */
+
+/* Mini-progreso del contador */
+.char-progress {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    margin-top: .15rem;
+    overflow: hidden;
+}
+.char-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    transition: width .15s ease;
+}
+
+/* Imágenes previas en subida */
+.upload-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: .5rem;
+}
+.upload-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: .4rem;
+    border: 1px solid #e9ecef;
+}
+
+/* Barra de progreso de subida (oculta por defecto) */
+.progress-upload {
+    margin-top: .5rem;
+    display: none;
+}
+
+/* Galería del reportaje: miniaturas ordenables */
+.gallery-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: .6rem;
+}
+.gallery-item-admin {
+    position: relative;
+    border: 1px solid #e9ecef;
+    border-radius: .4rem;
+    overflow: hidden;
+    background: #fff;
+}
+.gallery-item-admin img {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    display: block;
+}
+.gallery-item-admin .g-item-body {
+    padding: .35rem;
+}
+.gallery-item-admin .g-item-body input {
+    font-size: .75rem;
+}
+.gallery-item-admin .g-del {
+    position: absolute;
+    top: .3rem;
+    right: .3rem;
+    z-index: 2;
+}
+
+/* Checklist de revisión antes de publicar */
+.checklist-visor {
+    font-size: .9rem;
+}
+.checklist-visor .check-ok { color: #2fb344; }
+.checklist-visor .check-bad { color: #d63939; }
+
+/* Thumbnails en tablas */
+.table-thumb {
+    width: 56px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: .3rem;
+}
+
+/* Tabla dentro de card: scroll horizontal en móvil */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Badge de estado */
+.badge-estado {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+/* Detalle de vista previa */
+.preview-html img { max-width: 100%; height: auto; }
+.preview-html blockquote {
+    border-left: 4px solid var(--tblr-primary);
+    padding-left: 1rem;
+    font-style: italic;
+    color: #6c757d;
+}
+.preview-html h1, .preview-html h2, .preview-html h3 { font-family: inherit; }
+
+/* Aviso ffmpeg no disponible */
+.ffmpeg-aviso { font-size: .8rem; }
+
+/* Móvil: botones de acción en tablas */
+@media (max-width: 767px) {
+    .btn-table-action { padding: .35rem .5rem; }
+}

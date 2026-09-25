@@ -1,0 +1,4 @@
+# Este archivo existe para que Git versione el directorio uploads/.
+# Los archivos subidos por el admin NO se versionan: se crean en tiempo de
+# ejecucion y crecen sin limite. En Railway tambien conviene montarlos en un
+# volumen persistente, porque el filesystem es efimero.
