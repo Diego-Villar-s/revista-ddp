@@ -12,41 +12,58 @@ require_once APP_PATH . '/core/Session.php';
 App\Core\Session::start(BASE_URL . '/');
 
 // Autoload manual: no existe Composer en este proyecto.
-spl_autoload_register(static function (string $class): void {
-    $prefix = 'App\\Core\\';
-    if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
-        return;
-    }
-    $relative = substr($class, strlen($prefix));
-    $file = CORE_PATH . '/' . str_replace('\\', '/', $relative) . '.php';
-    if (is_file($file)) {
-        require_once $file;
-    }
-});
+//
+// El resolvedor busca los directorios sin distinguir mayusculas. El
+// namespace es App\Controllers\Admin pero la carpeta es
+// app/controllers/admin, y en Linux esa diferencia rompe la carga: el
+// panel entero devolvia 500 "Controlador no encontrado" solo en
+// produccion, porque en Windows el sistema de archivos no distingue.
+$ddpResolve = static function (string $baseDir, string $relative): ?string {
+    $segments = explode('\\', $relative);
+    $fileName = array_pop($segments) . '.php';
 
-spl_autoload_register(static function (string $class): void {
-    $prefix = 'App\\Models\\';
-    if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
-        return;
+    $directory = rtrim(str_replace('\\', '/', $baseDir), '/');
+    foreach ($segments as $segment) {
+        $candidate = $directory . '/' . $segment;
+        if (is_dir($candidate)) {
+            $directory = $candidate;
+            continue;
+        }
+        $matched = null;
+        $entries = @scandir($directory);
+        if ($entries !== false) {
+            foreach ($entries as $entry) {
+                if ($entry !== '.' && $entry !== '..' && strcasecmp($entry, $segment) === 0) {
+                    $matched = $directory . '/' . $entry;
+                    break;
+                }
+            }
+        }
+        if ($matched === null) {
+            return null;
+        }
+        $directory = $matched;
     }
-    $relative = substr($class, strlen($prefix));
-    $file = APP_PATH . '/models/' . str_replace('\\', '/', $relative) . '.php';
-    if (is_file($file)) {
-        require_once $file;
-    }
-});
 
-spl_autoload_register(static function (string $class): void {
-    $prefix = 'App\\Controllers\\';
-    if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
-        return;
-    }
-    $relative = substr($class, strlen($prefix));
-    $file = APP_PATH . '/controllers/' . str_replace('\\', '/', $relative) . '.php';
-    if (is_file($file)) {
-        require_once $file;
-    }
-});
+    $file = $directory . '/' . $fileName;
+    return is_file($file) ? $file : null;
+};
+
+$ddpAutoload = static function (string $prefix, string $baseDir) use ($ddpResolve) {
+    return static function (string $class) use ($prefix, $baseDir, $ddpResolve): void {
+        if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
+            return;
+        }
+        $file = $ddpResolve($baseDir, substr($class, strlen($prefix)));
+        if ($file !== null) {
+            require_once $file;
+        }
+    };
+};
+
+spl_autoload_register($ddpAutoload('App\\Core\\', CORE_PATH));
+spl_autoload_register($ddpAutoload('App\\Models\\', APP_PATH . '/models'));
+spl_autoload_register($ddpAutoload('App\\Controllers\\', APP_PATH . '/controllers'));
 
 $router = new App\Core\Router();
 require APP_PATH . '/routes.php';
