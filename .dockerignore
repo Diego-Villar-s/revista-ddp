@@ -1,0 +1,38 @@
+# Contexto de build de la imagen de produccion.
+# Railway usa esto, NO .gitignore: ambos son listas distintas.
+
+# Historial git y metadatos del repositorio
+.git
+.gitignore
+.gitattributes
+.github
+
+# Secretos: nunca deben entrar en la imagen
+.env
+.env.*
+!.env.example
+
+# Configuracion local y dependencias
+config/local.php
+vendor/
+node_modules/
+
+# Contenido subido: son binarios de mas de 200 MB en produccion y el
+# filesystem de Railway es efimero. Se montan como volume.
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/.htaccess
+
+# Logs con datos personales de los visitantes
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# Material de trabajo
+/reference
+*.md
+!README.md
+
+# Artefactos de desarrollo local
+docker-compose*.yml
+.dockerignore
+Dockerfile
