@@ -96,3 +96,8 @@ config.php.bak
 .phpunit.xml.bak
 *.pem
 *.key
+
+# Excepcion: el CA publico del servidor MySQL. No es un secreto (clave
+# publica) y la app lo necesita para autenticar con
+# caching_sha2_password sobre TLS.
+!config/mysql-ca.pem

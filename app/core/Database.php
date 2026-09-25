@@ -11,31 +11,94 @@ use PDOException;
 final class Database
 {
     private static ?self $instance = null;
-    private PDO $pdo;
+    private ?PDO $pdo = null;
 
     private function __construct()
     {
         $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
-        $options = [
+        $baseOptions = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
 
-        try {
-            $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-            $this->pdo->exec("SET NAMES utf8mb4");
-        } catch (PDOException $exception) {
-            error_log('DDP DB connection error: ' . $exception->getMessage());
-            if (ENVIRONMENT === 'local') {
-                http_response_code(500);
-                echo 'Error de conexión: ' . htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
-            } else {
-                http_response_code(500);
-                echo 'Error de conexión a la base de datos.';
+        $this->pdo = null;
+        $lastError = null;
+
+        foreach ($this->connectionAttempts($baseOptions) as $label => $options) {
+            try {
+                $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+                $this->pdo->exec("SET NAMES utf8mb4");
+                error_log('DDP DB connected via ' . $label);
+                break;
+            } catch (PDOException $exception) {
+                $lastError = $exception;
+                error_log('DDP DB attempt failed [' . $label . ']: ' . $exception->getMessage());
             }
+        }
+
+        if ($this->pdo === null) {
+            $message = $lastError !== null ? $lastError->getMessage() : 'sin intentos';
+            error_log('DDP DB connection error: ' . $message);
+            http_response_code(500);
+            echo ENVIRONMENT === 'local'
+                ? 'Error de conexión: ' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+                : 'Error de conexión a la base de datos.';
             exit;
         }
+    }
+
+    /**
+     * Construye las combinaciones de conexión a probar, en orden.
+     *
+     * MySQL 8.0+/9.x autentica con caching_sha2_password. Sobre un canal sin
+     * TLS el cliente necesita la clave pública del servidor; si no la
+     * obtiene, el fallo se reporta como "Access denied" aunque la contraseña
+     * sea correcta. Por eso se intenta primero TLS.
+     *
+     * @param  array<int, mixed> $baseOptions
+     * @return array<string, array<int, mixed>>
+     */
+    private function connectionAttempts(array $baseOptions): array
+    {
+        $attempts = [];
+        $caPath = $this->resolveCaPath();
+
+        if ($caPath !== null) {
+            $attempts['tls'] = $baseOptions + [
+                PDO::MYSQL_ATTR_SSL_CA => $caPath,
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => ddp_env('DB_SSL_VERIFY', '0') === '1',
+            ];
+        }
+
+        // Alternativa cuando no hay CA: la clave publica del servidor.
+        $publicKeyPath = ddp_env('DB_SERVER_PUBLIC_KEY');
+        if ($publicKeyPath !== null && $publicKeyPath !== '' && is_file($publicKeyPath)) {
+            $attempts['public-key'] = $baseOptions + [
+                PDO::MYSQL_ATTR_SERVER_PUBLIC_KEY => $publicKeyPath,
+            ];
+        }
+
+        // Ultimo recurso: sin cifrar, para MySQL 5.7/8 y MariaDB.
+        $attempts['plain'] = $baseOptions;
+
+        return $attempts;
+    }
+
+    /**
+     * Localiza el CA del servidor. Usa DB_SSL_CA y, si no se indica, el
+     * archivo incluido en el repositorio cuando la base no es local.
+     */
+    private function resolveCaPath(): ?string
+    {
+        $configured = ddp_env('DB_SSL_CA');
+        if ($configured === null || $configured === '') {
+            $isLocal = in_array(DB_HOST, ['localhost', '127.0.0.1', '::1'], true);
+            $bundled = CONFIG_PATH . '/mysql-ca.pem';
+            $configured = (!$isLocal && is_file($bundled)) ? $bundled : null;
+        }
+
+        return ($configured !== null && $configured !== '' && is_file($configured)) ? $configured : null;
     }
 
     public static function getInstance(): self
@@ -45,6 +108,9 @@ final class Database
 
     public function getConnection(): PDO
     {
+        if ($this->pdo === null) {
+            throw new \RuntimeException('La conexión a la base de datos no está inicializada.');
+        }
         return $this->pdo;
     }
 
