@@ -55,6 +55,23 @@ final class Database
         if ($this->pdo === null) {
             $message = $lastError !== null ? $lastError->getMessage() : 'sin intentos';
             error_log('DDP DB connection error: ' . $message);
+
+            // TEMPORAL (diagnostico): con DDP_BOOTSTRAP=1 se responde 200 para
+            // que el healthcheck de Railway valide el contenedor y quede
+            // accesible por SSH aunque la base de datos no responda.
+            if (getenv('DDP_BOOTSTRAP') === '1') {
+                http_response_code(200);
+                header('Content-Type: text/plain; charset=utf-8');
+                echo "bootstrap-ok\n";
+                echo "php=" . PHP_VERSION . "\n";
+                echo "pdo_mysql=" . (extension_loaded('pdo_mysql') ? 'yes' : 'no') . "\n";
+                echo "openssl=" . (extension_loaded('openssl') ? 'yes' : 'no') . "\n";
+                echo "ca=" . ($this->resolveCaPath() ?? 'none') . "\n";
+                echo "pubkey=" . (is_file(CONFIG_PATH . '/mysql-public-key.pem') ? 'yes' : 'no') . "\n";
+                echo "err=" . $message . "\n";
+                exit;
+            }
+
             http_response_code(500);
             echo ENVIRONMENT === 'local'
                 ? 'Error de conexión: ' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
