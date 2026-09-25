@@ -19,10 +19,13 @@
 
 ## Despliegue
 
-- **Nunca añadir un `Procfile`.** Railway respeta su comando y con eso *reemplaza* el arranque con Nginx + PHP-FPM que define `nginx.template.conf`. Medido con `php -S -t public`: `/`, `/reportajes` y `/admin/login` devuelven los mismos 27 778 bytes (todas renderizan la portada), `/admin/login` no muestra el formulario de acceso y todo `/public/assets/*` responde 404. El fallo devuelve HTTP 200, así que parece funcionar.
-- `nginx.template.conf` fija `root` en la raíz del proyecto y no en `public/`, para que `public/` y `uploads/` sigan siendo árboles físicos y `PUBLIC_URL`/`UPLOADS_URL` no cambien. Reproduce los bloqueos del `.htaccess` raíz, que Railway no lee porque usa Nginx.
-- La configuración no está hardcodeada: `config/config.php` lee de `config/env.php`, que prioriza las variables del servidor sobre el archivo `.env` (obligatorio en Railway) y acepta `DATABASE_URL` además de `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASS`.
+- El servicio arranca con `Procfile` → `php -S 0.0.0.0:$PORT -t public public/router.php`. **El tercer argumento (`public/router.php`) es obligatorio**: el servidor embebido no reescribe URLs, y sin ese script `Router::parseUrl()` siempre recibe `/` y todas las rutas devuelven la portada con HTTP 200.
+- `public/router.php` es el equivalente funcional del `.htaccess` raíz: asigna `$_GET['url']`, bloquea `app`/`config`/`database`/`storage`/`reference`/`vendor`/`tests`, ocultos, el propio router y `index.php`, y transmite `uploads/` desde el directorio hermano con soporte de `Range`.
+- El router fija `APP_PUBLIC_URL=/` porque con `-t public` el document root **es** `public/`; así el HTML pide `/assets/...` en vez de `/public/assets/...`. Si se cambia el document root hay que revisar esa línea.
+- `nginx.template.conf` se mantiene para despliegues con Nginx. En Railway el `Procfile` tiene prioridad y lo deja sin usar. Su `root` debe seguir siendo la raíz del proyecto para que `public/` y `uploads/` sean árboles físicos.
+- La configuración no está hardcodeada: `config/config.php` lee de `config/env.php`, que prioriza las variables del servidor sobre el archivo `.env` y acepta `DATABASE_URL` además de `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASS`.
 - Todos los `require`/`include` usan `__DIR__`, `dirname(__DIR__)` o `APP_PATH`: son rutas de filesystem, independientes del document root. No introducir `./archivo.php` relativos.
+- `Router` solo registra rutas `GET` y `POST`: las peticiones `HEAD` devuelven 404 en todos los servidores. No es una regresión del router.
 - En Railway el filesystem es efímero: `uploads/` y `storage/logs/` necesitan un volume montado o se pierden en cada redespliegue.
 
 ## Verificación
