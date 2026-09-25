@@ -101,10 +101,15 @@ function ddp_env(string $name, ?string $default = null): ?string
     if ($value === false || $value === '') {
         $value = $_ENV[$name] ?? $_SERVER[$name] ?? null;
     }
-    if ($value === null || $value === '') {
+    if ($value === null) {
         return $default;
     }
-    return (string) $value;
+    // Recorta el espacio exterior: al copiar valores desde el panel de
+    // Railway o desde un .env se cuela un espacio con facilidad. Con
+    // DB_USER valiendo " root" en vez de "root", MySQL responde
+    // "Access denied for user ' root'" con la contrasena correcta.
+    $value = trim((string) $value);
+    return $value === '' ? $default : $value;
 }
 
 /**
