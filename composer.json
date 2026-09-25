@@ -1,0 +1,23 @@
+{
+    "name": "ddp/revista-ddp",
+    "description": "Portal de noticias de Dialogo y Desarrollo Peru - MVC manual en PHP 8.2",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-fileinfo": "*"
+    },
+    "suggest": {
+        "ext-gd": "Genera miniaturas y WebP. Si falta, MediaProcessor conserva el archivo original sin fallar.",
+        "ext-curl": "Solo si se anade envio de correo en el futuro."
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}
