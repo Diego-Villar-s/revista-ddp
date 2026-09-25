@@ -97,7 +97,8 @@ config.php.bak
 *.pem
 *.key
 
-# Excepcion: el CA publico del servidor MySQL. No es un secreto (clave
-# publica) y la app lo necesita para autenticar con
-# caching_sha2_password sobre TLS.
+# Excepcion: material criptografico publico del servidor MySQL. No son
+# secretos (certificado CA y clave publica) y la app los necesita para
+# autenticar con caching_sha2_password desde PHP.
 !config/mysql-ca.pem
+!config/mysql-public-key.pem

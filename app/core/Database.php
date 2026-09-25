@@ -87,7 +87,17 @@ final class Database
         }
 
         // Alternativa cuando no hay CA: la clave publica del servidor.
+        // MySQL 8/9 usa caching_sha2_password y, sin TLS, el cliente la
+        // necesita para cifrar la contrasena. El CLI de MySQL 9.4 la pide
+        // solo; mysqlnd de PHP hay que senialarsela con
+        // PDO::MYSQL_ATTR_SERVER_PUBLIC_KEY. Sin esto el servidor responde
+        // 1045 Access denied aunque la contrasena sea correcta.
         $publicKeyPath = ddp_env('DB_SERVER_PUBLIC_KEY');
+        if ($publicKeyPath === null || $publicKeyPath === '') {
+            $isLocal = in_array(DB_HOST, ['localhost', '127.0.0.1', '::1'], true);
+            $bundled = CONFIG_PATH . '/mysql-public-key.pem';
+            $publicKeyPath = (!$isLocal && is_file($bundled)) ? $bundled : null;
+        }
         if ($publicKeyPath !== null && $publicKeyPath !== '' && is_file($publicKeyPath)) {
             $attempts['public-key'] = $baseOptions + [
                 PDO::MYSQL_ATTR_SERVER_PUBLIC_KEY => $publicKeyPath,
