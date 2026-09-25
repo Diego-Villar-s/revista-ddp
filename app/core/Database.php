@@ -25,6 +25,19 @@ final class Database
         $this->pdo = null;
         $lastError = null;
 
+        // Diagnostico seguro: longitudes y si la variable llego al proceso.
+        // Nunca se registra el valor de la contrasena.
+        error_log(sprintf(
+            'DDP DB cfg: host=%s port=%s db=%s user=%s pass_len=%d getenv=%s tls_ca=%s',
+            DB_HOST,
+            DB_PORT,
+            DB_NAME,
+            DB_USER,
+            strlen((string) DB_PASS),
+            getenv('DB_PASS') !== false ? 'yes' : 'no',
+            $this->resolveCaPath() ?? 'none'
+        ));
+
         foreach ($this->connectionAttempts($baseOptions) as $label => $options) {
             try {
                 $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
