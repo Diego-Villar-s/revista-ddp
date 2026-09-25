@@ -19,7 +19,10 @@
 
 ## Despliegue
 
-- El servicio arranca con `Procfile` → `php -S 0.0.0.0:$PORT -t public public/router.php`. **El tercer argumento (`public/router.php`) es obligatorio**: el servidor embebido no reescribe URLs, y sin ese script `Router::parseUrl()` siempre recibe `/` y todas las rutas devuelven la portada con HTTP 200.
+- **En Railway manda el `Dockerfile`, no el `Procfile`.** Railpack 0.40 detecta este repo como `Staticfile` (por el directorio `public/`) y arranca Caddy, ignorando el `Procfile`; `/` da 404 y el healthcheck marca el deployment como FAILED. `composer.json` no lo arregla porque la detección de Staticfile tiene prioridad. El `Dockerfile` construye `php:8.2-cli` con `pdo_mysql`, `gd` y `zip`, y su `CMD` es el equivalente del `Procfile`. El `Procfile` se conserva como documentación y para otros hostings.
+- El arranque dentro de la imagen es `php -S 0.0.0.0:$PORT -t public public/router.php` con `PHP_CLI_SERVER_WORKERS=4`. **El script de router es obligatorio**: el servidor embebido no reescribe URLs, y sin el `Router::parseUrl()` siempre recibe `/` y todas las rutas devuelven la portada con HTTP 200.
+- `php -S` no lee `.user.ini` (solo CGI/FastCGI), por eso los límites de subida van en `/usr/local/etc/php/conf.d/ddp.ini` dentro de la imagen, no en `public/.user.ini`. Los dos sitios deben mantener los mismos valores.
+- `railway logs` sin argumento muestra el build del **último deployment exitoso**; como los fallos de healthcheck no lo son, hay que pasar el ID: `railway logs --build <deployment-id>`. Sin eso se leen logs obsoletos.
 - `public/router.php` es el equivalente funcional del `.htaccess` raíz: asigna `$_GET['url']`, bloquea `app`/`config`/`database`/`storage`/`reference`/`vendor`/`tests`, ocultos, el propio router y `index.php`, y transmite `uploads/` desde el directorio hermano con soporte de `Range`.
 - El router fija `APP_PUBLIC_URL=/` porque con `-t public` el document root **es** `public/`; así el HTML pide `/assets/...` en vez de `/public/assets/...`. Si se cambia el document root hay que revisar esa línea.
 - `nginx.template.conf` se mantiene para despliegues con Nginx. En Railway el `Procfile` tiene prioridad y lo deja sin usar. Su `root` debe seguir siendo la raíz del proyecto para que `public/` y `uploads/` sean árboles físicos.

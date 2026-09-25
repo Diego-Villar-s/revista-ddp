@@ -248,18 +248,51 @@ raíz) reproduce esas reglas:
 En Railway la app queda **en la raíz del dominio**, así que `APP_BASE_URL` debe
 quedar **vacía**. `config/env.php` la detecta sola vía `SCRIPT_NAME`.
 
-### 12.1.bis Cómo arranca el sitio: `Procfile` + `public/router.php`
+### 12.1.bis Cómo arranca el sitio
 
-El servicio arranca con el **servidor embebido de PHP**:
+**En Railway manda el `Dockerfile`.** El servicio corre:
 
 ```
-web: php -S 0.0.0.0:$PORT -t public public/router.php
+php -S 0.0.0.0:$PORT -t public public/router.php
 ```
 
-El tercer argumento es **imprescindible**. El servidor embebido no reescribe
-URLs, así que sin un script de router `Router::parseUrl()` recibiría siempre `/`
-y **todas las páginas devolverían la portada con HTTP 200** (el panel de acceso
-quedaría inaccesible y el fallo sería invisible).
+con `PHP_CLI_SERVER_WORKERS=4` y PHP 8.2 + `pdo_mysql`, `gd` y `zip`.
+
+#### Por qué un Dockerfile y no la autodetección
+
+Railpack 0.40 clasifica este repositorio como **Staticfile** (por el directorio
+`public/`) y arranca **Caddy** en lugar de PHP. Medido en el build log:
+
+```
+↳ Detected Staticfile
+↳ Using staticfile root dir: public
+Packages
+caddy │ 2.11.4
+Deploy
+$ caddy run --config Caddyfile --adapter caddyfile
+```
+
+Con Caddy el `Procfile` se ignora por completo, `/` responde 404 y el
+healthcheck mata el despliegue:
+
+```
+Starting Healthcheck
+Path: /
+Attempt #1 failed with HTTP 404
+1/1 replicas never became healthy!
+```
+
+Añadir `composer.json` **no** sirvió: la detección de Staticfile tiene prioridad.
+El `Dockerfile` elimina la ambigüedad porque Railway construye la imagen tal
+cual, sin adivinar el lenguaje. El `Procfile` se conserva en el repositorio
+como documentación del comando de arranque y para otros hostings.
+
+#### Por qué el script de router es obligatorio
+
+El servidor embebido de PHP no reescribe URLs. Sin un router,
+`Router::parseUrl()` recibiría siempre `/` y **todas las páginas devolverían la
+portada con HTTP 200** (medido: 27 778 bytes idénticos en `/`, `/reportajes` y
+`/admin/login`, y el panel sin campo `password`). El fallo sería invisible.
 
 `public/router.php` reproduce lo que hacía Apache:
 
@@ -272,9 +305,15 @@ quedaría inaccesible y el fallo sería invisible).
 | `uploads/` | Vive fuera del document root, así que se transmite desde el directorio hermano **con soporte de `Range`** para no perder la barra de búsqueda de los vídeos |
 | No ejecutar código subido | Bloquea `php`, `phtml`, `phar`, `cgi`, `pl`, `py`, `sh` dentro de `uploads/` |
 
-`nginx.template.conf` se conserva para despliegues que usen Nginx (Apache,
-Railway con la plantilla por defecto, otros hosting). El `Procfile` tiene
-prioridad sobre esa plantilla en Railway.
+`nginx.template.conf` se conserva para despliegues que usen Nginx (Apache, otros
+hostings). No interviene en Railway porque el `Dockerfile` tiene prioridad.
+
+#### Límites de subida
+
+`php -S` **no lee `.user.ini`** (solo lo leen CGI/FastCGI), así que los límites
+van en `/usr/local/etc/php/conf.d/ddp.ini` dentro de la imagen: 210 MB de
+subida, 220 MB de `post_max_size` y 256 MB de memoria, para cubrir el vídeo de
+200 MB que admite el panel.
 
 ### 12.2 Pasos en el panel de Railway
 
