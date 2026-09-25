@@ -25,15 +25,17 @@ final class Database
         $this->pdo = null;
         $lastError = null;
 
-        // Diagnostico seguro: longitudes y si la variable llego al proceso.
-        // Nunca se registra el valor de la contrasena.
+        // Diagnostico seguro: longitudes y una huella de la contrasena para
+        // detectar si Railway entrega los mismos bytes que MySQL espera.
+        // No se registra el valor.
         error_log(sprintf(
-            'DDP DB cfg: host=%s port=%s db=%s user=%s pass_len=%d getenv=%s tls_ca=%s',
+            'DDP DB cfg: host=%s port=%s db=%s user=%s pass_len=%d pass_md5=%s getenv=%s tls_ca=%s',
             DB_HOST,
             DB_PORT,
             DB_NAME,
             DB_USER,
             strlen((string) DB_PASS),
+            substr(md5((string) DB_PASS), 0, 8),
             getenv('DB_PASS') !== false ? 'yes' : 'no',
             $this->resolveCaPath() ?? 'none'
         ));
