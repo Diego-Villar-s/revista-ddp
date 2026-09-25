@@ -248,6 +248,30 @@ raíz) reproduce esas reglas:
 En Railway la app queda **en la raíz del dominio**, así que `APP_BASE_URL` debe
 quedar **vacía**. `config/env.php` la detecta sola vía `SCRIPT_NAME`.
 
+### 12.1.bis Por qué NO hay un `Procfile`
+
+**No añadas un `Procfile` a este proyecto.** Railway lo respeta, pero su comando
+*reemplaza* el arranque con Nginx + PHP-FPM que ya hace `nginx.template.conf`.
+
+Probado localmente con `php -S 0.0.0.0:8896 -t public`:
+
+| Comprobación | Resultado |
+|---|---|
+| `/`, `/reportajes`, `/admin/login`, `/ruta-inexistente` | Las cuatro devuelven **exactamente los mismos 27 778 bytes** |
+| `/admin/login` | **No renderiza el formulario**: no hay `name="password"` |
+| `/public/assets/css/*.css` | **404** en todos los assets |
+
+Motivos concretos:
+
+1. **El servidor embebido de PHP no hace reescritura de URLs.** `Router::parseUrl()` lee `$_GET['url']`, que Nginx inyecta con `?url=`. Sin él, el router siempre recibe `/` y devuelve la portada. El panel de administración quedaría inaccesible.
+2. **`-t public` rompe los assets.** La app genera `PUBLIC_URL = BASE_URL . '/public'`; con el document root en `public/`, la ruta `/public/assets/...` no existe.
+3. **No soporta Range Requests**, así que los vídeos de `uploads/` perderían la barra de búsqueda.
+4. El fallo 1 y 2 devuelven **HTTP 200**: el sitio parece vivo y no lo está.
+
+Este es el motivo de que `nginx.template.conf` fije `root` en la raíz del
+proyecto y no en `public/`: así `public/` y `uploads/` siguen siendo directorios
+físicos y las URLs de la aplicación no cambian.
+
 ### 12.2 Pasos en el panel de Railway
 
 1. **New Project → Deploy from GitHub repo** y elige el repositorio.
